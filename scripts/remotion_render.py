@@ -20,39 +20,44 @@ def create_project(script_file, audio_dir, project_dir):
 
     os.makedirs(project_dir, exist_ok=True)
 
-    # 创建package.json
+    # 创建package.json - 使用稳定版本3.3.x
     package_json = {
         "name": "ai-content-video",
         "version": "1.0.0",
         "description": "AI生成的视频项目",
         "scripts": {
             "start": "remotion studio",
-            "build": "remotion render src/Video.tsx out video.mp4",
+            "build": "remotion render src/Video.tsx main-video out/video.mp4",
             "preview": "remotion preview src/Video.tsx",
         },
         "dependencies": {
-            "@remotion/cli": "^4.0.0",
-            "@remotion/node": "^4.0.0",
-            "@remotion/react": "^4.0.0",
-            "react": "^18.2.0",
-            "react-dom": "^18.2.0",
+            "@remotion/cli": "3.3.103",
+            "remotion": "3.3.103",
+            "react": "18.2.0",
+            "react-dom": "18.2.0",
         },
     }
 
     with open(os.path.join(project_dir, "package.json"), "w", encoding="utf-8") as f:
         json.dump(package_json, f, indent=2)
 
-    # 创建remotion.config.ts
-    config_ts = """import { Config } from "@remotion/cli";
-
-Config.setVideoImageFormat("png");
-Config.setCodec("h264");
-"""
-
-    with open(
-        os.path.join(project_dir, "remotion.config.ts"), "w", encoding="utf-8"
-    ) as f:
-        f.write(config_ts)
+    # 创建tsconfig.json
+    tsconfig = {
+        "compilerOptions": {
+            "target": "ES2020",
+            "module": "ESNext",
+            "moduleResolution": "node",
+            "esModuleInterop": True,
+            "jsx": "react-jsx",
+            "strict": True,
+            "skipLibCheck": True,
+            "resolveJsonModule": True,
+            "allowSyntheticDefaultImports": True,
+        },
+        "include": ["src/**/*"],
+    }
+    with open(os.path.join(project_dir, "tsconfig.json"), "w", encoding="utf-8") as f:
+        json.dump(tsconfig, f, indent=2)
 
     # 创建src目录
     src_dir = os.path.join(project_dir, "src")
@@ -63,38 +68,29 @@ Config.setCodec("h264");
         script_content = f.read()
 
     # 生成Video.tsx
-    video_tsx = generate_video_tsx(script_content, audio_dir)
+    video_tsx = generate_video_tsx(script_content)
     with open(os.path.join(src_dir, "Video.tsx"), "w", encoding="utf-8") as f:
         f.write(video_tsx)
 
-    # 生成index.tsx
-    index_tsx = """import { render } from "@remotion/node";
-import { Video } from "./Video";
-
-render(Video, { outPath: "out/video.mp4" });
-"""
-    with open(os.path.join(src_dir, "index.tsx"), "w", encoding="utf-8") as f:
-        f.write(index_tsx)
-
-    # 复制音频文件
-    audio_dest = os.path.join(src_dir, "audio")
+    # 复制音频文件到public目录
+    public_dir = os.path.join(project_dir, "public")
     if os.path.exists(audio_dir):
-        os.makedirs(audio_dest, exist_ok=True)
+        os.makedirs(public_dir, exist_ok=True)
         for f in os.listdir(audio_dir):
             if f.endswith(".mp3"):
-                shutil.copy2(os.path.join(audio_dir, f), os.path.join(audio_dest, f))
+                shutil.copy2(os.path.join(audio_dir, f), os.path.join(public_dir, f))
 
     print(f"✅ Remotion项目已创建: {project_dir}")
     print(f"📦 请运行: cd {project_dir} && npm install")
     print(
-        f"🎬 渲染视频: cd {project_dir} && npx remotion render src/Video.tsx out video.mp4"
+        f"🎬 渲染视频: cd {project_dir} && npx remotion render src/Video.tsx main-video out/video.mp4"
     )
 
     return project_dir
 
 
-def generate_video_tsx(script_content, audio_dir):
-    """生成Remotion视频组件"""
+def generate_video_tsx(script_content):
+    """生成Remotion视频组件 - 使用v3.3兼容API"""
 
     # 提取章节信息
     sections = []
@@ -108,65 +104,59 @@ def generate_video_tsx(script_content, audio_dir):
     if not sections:
         sections = ["AI Generated Content"]
 
-    # 生成TSX代码
+    # 生成TSX代码 - 使用v3.3兼容格式
     sections_json = json.dumps(sections)
 
-    tsx = (
-        """import { useCurrentFrame, useVideoConfig, interpolate, AbsoluteFill, Audio, staticFile, Text } from "@remotion/node";
-import { composition } from "@remotion/react";
-import React from "react";
+    tsx = f"""import React from "react";
+import {{ Composition, AbsoluteFill, Text, registerRoot }} from "remotion";
 
-const sections_json = """
-        + sections_json
-        + """;
+const sections = {sections_json};
 
-const Video = () => {
-  const frame = useCurrentFrame();
-  const { fps, durationInFrames } = useVideoConfig();
-
+const VideoContent: React.FC = () => {{
   return (
-    <AbsoluteFill style={{ backgroundColor: "#1a1a2e" }}>
-      {sections_json.map((title, index) => (
-        <Slide 
-          key={index} 
-          title={title} 
-          startFrame={index * 150}
-          duration={150}
-        />
-      ))}
-      
-      <Audio src={staticFile("audio/segment_001.mp3")} />
+    <AbsoluteFill style={{{{ backgroundColor: "#1a1a2e" }}}}>
+      {{sections.map((title, index) => (
+        <AbsoluteFill
+          key={{index}}
+          style={{{{
+            justifyContent: "center",
+            alignItems: "center",
+            backgroundColor: "#1a1a2e",
+          }}}}
+        >
+          <Text
+            style={{{{
+              fontSize: 60,
+              color: "white",
+              textAlign: "center",
+              padding: 40,
+            }}}}
+          >
+            {{title}}
+          </Text>
+        </AbsoluteFill>
+      ))}}
     </AbsoluteFill>
   );
-};
+}};
 
-const Slide = ({ title, startFrame, duration }) => {
-  const frame = useCurrentFrame();
-  const opacity = interpolate(
-    frame,
-    [startFrame, startFrame + 30, startFrame + duration - 30, startFrame + duration],
-    [0, 1, 1, 0]
-  );
-
+const Root: React.FC = () => {{
   return (
-    <AbsoluteFill style={{ opacity, justifyContent: "center", alignItems: "center" }}>
-      <Text style={{ fontSize: 60, color: "white", textAlign: "center" }}>
-        {title}
-      </Text>
-    </AbsoluteFill>
+    <>
+      <Composition
+        id="main-video"
+        component={{VideoContent}}
+        durationInFrames={{sections.length * 150}}
+        fps={{30}}
+        width={{1920}}
+        height={{1080}}
+      />
+    </>
   );
-};
+}};
 
-export const VideoComposition = composition({
-  id: "Video",
-  component: Video,
-  durationInFrames: 600,
-  fps: 30,
-});
-
-export default Video;
+registerRoot(Root);
 """
-    )
 
     return tsx
 
@@ -179,33 +169,27 @@ def render_video(project_dir, output_file):
     print(f"📹 输出文件: {output_file}")
 
     # 检查依赖
-    package_json = os.path.join(project_dir, "package.json")
-    if not os.path.exists(package_json):
+    package_json_path = os.path.join(project_dir, "package.json")
+    if not os.path.exists(package_json_path):
         print("⚠️ 依赖未安装，正在安装...")
         os.system(f"cd {project_dir} && npm install")
 
     # 执行渲染
     os.makedirs(os.path.dirname(output_file), exist_ok=True)
 
-    # 简化版：检查ffmpeg是否可用
-    ffmpeg_check = os.system("where ffmpeg >nul 2>&1")
+    # 渲染命令
+    render_cmd = f"cd {project_dir} && npx remotion render src/Video.tsx main-video out/video.mp4"
+    print(f"🔄 执行渲染命令: {render_cmd}")
 
-    if ffmpeg_check == 0:
-        print("✅ ffmpeg 已安装")
-        # 如果有Remotion输出，直接使用
+    result = os.system(render_cmd)
+
+    if result == 0:
         out_video = os.path.join(project_dir, "out", "video.mp4")
         if os.path.exists(out_video):
             shutil.copy2(out_video, output_file)
             print(f"✅ 视频渲染完成: {output_file}")
-        else:
-            print(
-                "⚠️ 请先运行: cd {} && npx remotion render src/Video.tsx out video.mp4".format(
-                    project_dir
-                )
-            )
     else:
-        print("⚠️ ffmpeg 未安装，请先安装 ffmpeg")
-        print("💡 安装地址: https://ffmpeg.org/download.html")
+        print("⚠️ 渲染失败，请手动检查")
 
     return output_file
 
