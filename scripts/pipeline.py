@@ -6,6 +6,13 @@ import os
 import json
 import sys
 
+# 修复Windows控制台编码问题
+if sys.platform == "win32":
+    try:
+        sys.stdout.reconfigure(encoding="utf-8")
+    except:
+        pass
+
 
 def run_full_pipeline(input_file, output_dir, voice="zh-CN-XiaoxiaoNeural"):
     """执行完整的内容生成流程"""
