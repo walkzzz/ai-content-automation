@@ -48,13 +48,13 @@ def run_full_pipeline(input_file, output_dir, voice="zh-CN-XiaoxiaoNeural"):
     create_project(script_file, audio_dir, project_dir)
     print(f"✅ Remotion项目已创建: {project_dir}")
 
-    # Step 5: 渲染视频
+    # Step 5: 渲染视频（自动合并配音）
     print("\n📝 Step 5: 渲染视频...")
     video_file = os.path.join(output_dir, "videos", "final.mp4")
     os.makedirs(os.path.dirname(video_file), exist_ok=True)
     from .remotion_render import render_video
 
-    render_video(project_dir, video_file)
+    render_video(project_dir, video_file, audio_dir)
     print(f"✅ 视频已渲染: {video_file}")
 
     print("\n" + "=" * 50)

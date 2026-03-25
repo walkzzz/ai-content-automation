@@ -161,7 +161,7 @@ registerRoot(Root);
     return tsx
 
 
-def render_video(project_dir, output_file):
+def render_video(project_dir, output_file, audio_dir=None):
     """渲染视频"""
 
     print(f"🎬 开始渲染视频...")
@@ -186,8 +186,39 @@ def render_video(project_dir, output_file):
     if result == 0:
         out_video = os.path.join(project_dir, "out", "video.mp4")
         if os.path.exists(out_video):
-            shutil.copy2(out_video, output_file)
-            print(f"✅ 视频渲染完成: {output_file}")
+            # 如果有音频，尝试合并
+            if audio_dir and os.path.exists(audio_dir):
+                # 查找第一个音频文件
+                audio_files = [f for f in os.listdir(audio_dir) if f.endswith(".mp3")]
+                if audio_files:
+                    audio_file = os.path.join(audio_dir, audio_files[0])
+                    print(f"🎵 发现音频文件: {audio_file}")
+
+                    # 检查ffmpeg是否可用
+                    ffmpeg_check = os.system("where ffmpeg >nul 2>&1")
+                    if ffmpeg_check == 0:
+                        # 使用ffmpeg合并
+                        temp_video = output_file + ".temp.mp4"
+                        shutil.copy2(out_video, temp_video)
+                        merge_cmd = f'ffmpeg -i "{temp_video}" -i "{audio_file}" -c:v copy -c:a aac -strict experimental -shortest "{output_file}"'
+                        print(f"🔄 合并音视频: {merge_cmd}")
+                        merge_result = os.system(merge_cmd)
+                        os.remove(temp_video)
+
+                        if merge_result == 0:
+                            print(f"✅ 视频+配音合并完成: {output_file}")
+                        else:
+                            print("⚠️ 音频合并失败，使用无声视频")
+                    else:
+                        shutil.copy2(out_video, output_file)
+                        print(f"✅ 视频渲染完成(无声): {output_file}")
+                        print("💡 如需配音，请安装 FFmpeg")
+                else:
+                    shutil.copy2(out_video, output_file)
+                    print(f"✅ 视频渲染完成: {output_file}")
+            else:
+                shutil.copy2(out_video, output_file)
+                print(f"✅ 视频渲染完成: {output_file}")
     else:
         print("⚠️ 渲染失败，请手动检查")
 
