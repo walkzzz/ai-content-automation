@@ -1,0 +1,15 @@
+# AI Content Automation - Python Dependencies
+
+# PDF解析
+pdfplumber>=0.10.0
+pymupdf>=1.23.0
+
+# TTS配音
+edge-tts>=6.1.0
+
+# 通用
+tqdm>=4.65.0
+python-dotenv>=1.0.0
+
+# GitHub（可选）
+PyGithub>=1.59.0

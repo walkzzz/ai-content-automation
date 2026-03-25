@@ -1,0 +1,23 @@
+{
+  "skill_name": "ai-content-automation",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "帮我把 E:\\.testcase\\MyCase\\测试用例\\文档.md 转换成视频",
+      "expected_output": "能够识别这是一个PDF/MD转视频的任务，启动完整流水线",
+      "files": ["E:\\.testcase\\MyCase\\测试用例\\文档.md"]
+    },
+    {
+      "id": 2,
+      "prompt": "我想做一个教学视频，内容是技术文档PDF",
+      "expected_output": "引导用户提供PDF文件，然后执行内容自动化流程",
+      "files": []
+    },
+    {
+      "id": 3,
+      "prompt": "AI自动做视频这个技能怎么用？",
+      "expected_output": "展示使用说明，包括命令和参数",
+      "files": []
+    }
+  ]
+}
